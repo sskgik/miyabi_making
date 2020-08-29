@@ -2,16 +2,20 @@
 using Miyabi.Asset.Models;
 using Miyabi.ClientSdk;
 using Miyabi.Common.Models;
+using Miyabi.Cryptography;
 using System;
 using System.Threading.Tasks;
 using Utility;
 
-namespace AssetSample
+
+
+
+namespace TestSample
 {
     class Program
     {
-        const string TableName = "ChaChaCOIN";
-        
+        const string TableName = "ChaChaCoin";
+
         static async Task Main(string[] args)
         {
 
@@ -22,9 +26,12 @@ namespace AssetSample
             AssetTypesRegisterer.RegisterTypes();
 
             string txID_1 = await CreateAssetTable(client);
-            //string txID_2 = await AssetGenerate(client);
+            string txID_2 = await AssetGenerate(client);
+            string txID_3 = await Send(client);
+            await ShowAsset(client);
             Console.WriteLine($"txid={txID_1}");
-            //Console.WriteLine($"txid={txID_2}");
+            Console.WriteLine($"txid={txID_2}");
+            Console.WriteLine($"txid={txID_3}");
 
             Console.WriteLine("Press enter to exit");
             Console.ReadLine();
@@ -32,12 +39,11 @@ namespace AssetSample
 
         private static async Task<string> CreateAssetTable(IClient client)
         {
-            //テーブル名とテーブル所有者の公開鍵（トークン発行権や制限付き操作の実行権: 
-            //PublicKey.Parse(ALICE_PUBLIC_KEY_ADDRESS)= Utils.GetOwnerKeyPair().PublicKey
+            
 
             var aliceAddress = new PublicKeyAddress(Utils.GetOwnerKeyPair().PublicKey);
             var assetTable = new CreateTable(new AssetTableDescriptor(
-               "ChaChaCoin", false, false, new[] { aliceAddress }));
+               TableName, false, false, new[] { aliceAddress }));
 
             var memo = new MemoEntry(new[] { "Hinatazaka_Token" });
             var tx = TransactionCreator.SimpleSignedTransaction(
@@ -48,24 +54,98 @@ namespace AssetSample
 
             return tx.Id.ToString();
         }
-         
+
         public static async Task<string> Assetgenerate(IClient client)
         {
 
-           
+
             var generateAsset = new AssetGen(TableName, 1000000m,
-                new PublicKeyAddress(Utils.GetOwnerKeyPair().PublicKey));
+                new PublicKeyAddress(Utils.GetUser0KeyPair().PublicKey));
 
             var tx = TransactionCreator.SimpleSignedTransaction(
                 new ITransactionEntry[] { generateAsset },
                 new[] { Utils.GetOwnerKeyPair().PrivateKey });
 
-            
+
             await SendTransaction(tx);
 
             return tx.Id.ToString(); ;
         }
-        
+
+        public static async Task<string> Send(IClient client)
+        {
+            var from = new PublicKeyAddress(Utils.GetUser0KeyPair());
+            var to = new PublicKeyAddress(Utils.GetUser1KeyPair());
+
+            var amount = Inputjudement();
+
+            var moveCoin = new AssetMove(TableName, amount, from, to);
+            var tx = TransactionCreator.SimpleSignedTransaction(
+                new ITransactionEntry[] { moveCoin },
+                new [] {Utils.GetUser0KeyPair().PrivateKey});
+            await SendTransaction(tx);
+
+            return tx.Id.ToString();
+        }
+
+        public static decimal Inputjudement()
+        {
+            const int RETRY_MAX = 5;
+            decimal value = 0m;
+            string Inputbycustomer;
+            int i = 0;
+
+
+            for (i = 0; i < RETRY_MAX; i++)
+            {
+                Console.WriteLine("Please enter tne send amount");
+                Inputbycustomer = null;
+                Inputbycustomer = Console.ReadLine();
+                try
+                {
+                    value = Convert.ToDecimal(Inputbycustomer);
+                    break;
+                }
+                catch (System.FormatException)
+                {
+                    Console.WriteLine("Not Number Please Retry");
+                }
+                catch (System.OverflowException)
+                {
+                    Console.Write("Overflow Exception");
+                    Console.WriteLine("Please Retry input Number");
+                }
+            }
+
+            if (i < RETRY_MAX)
+            {
+                return value;
+            }
+            else
+            {
+                Console.WriteLine("Types miss at fifth ! Finished Program");
+                Environment.Exit(0x8020);
+                return 0;
+            }
+        }
+
+        private static async Task ShowAsset(IClient client)
+        {
+            // AssetClient has access to asset endpoints
+            var assetClient = new AssetClient(client);
+
+            var addresses = new Address[] {
+                new PublicKeyAddress(Utils.GetUser0KeyPair()),
+                new PublicKeyAddress(Utils.GetUser1KeyPair()),
+            };
+
+            foreach (var address in addresses)
+            {
+                var result = await assetClient.GetAssetAsync(TableName, address);
+                Console.WriteLine($"address={address}, amount={result.Value}");
+            }
+        }
+
         public static async Task SendTransaction(Transaction tx)
         {
             var config = new SdkConfig(Utils.ApiUrl);
