@@ -77,7 +77,7 @@ namespace TestSample
             var from = new PublicKeyAddress(Utils.GetUser0KeyPair());
             var to = new PublicKeyAddress(Utils.GetUser1KeyPair());
 
-            var amount = Inputjudement();
+            var amount = Inputjudgement();
 
             var moveCoin = new AssetMove(TableName, amount, from, to);
             var tx = TransactionCreator.SimpleSignedTransaction(
@@ -88,7 +88,7 @@ namespace TestSample
             return tx.Id.ToString();
         }
 
-        public static decimal Inputjudement()
+        public static decimal Inputjudgement()
         {
             const int RETRY_MAX = 5;
             decimal value = 0m;
