@@ -36,11 +36,14 @@ namespace TestSample
             Console.WriteLine("Press enter to exit");
             Console.ReadLine();
         }
-
+        /// <summary>
+        ///  Make Asset Table Method
+        /// </summary>
+        /// <param name="client"></param>
+        /// <returns>tx.Id</returns>
         private static async Task<string> CreateAssetTable(IClient client)
         {
-            
-
+            //Get PublicKey from Utils's GetOwnerKeyPair()
             var aliceAddress = new PublicKeyAddress(Utils.GetOwnerKeyPair().PublicKey);
             var assetTable = new CreateTable(new AssetTableDescriptor(
                TableName, false, false, new[] { aliceAddress }));
@@ -54,11 +57,14 @@ namespace TestSample
 
             return tx.Id.ToString();
         }
-
+        /// <summary>
+        /// Generation Asset 
+        /// </summary>
+        /// <param name="client"></param>
+        /// <returns>tx.Id</returns>
         public static async Task<string> Assetgenerate(IClient client)
         {
-
-
+            //Asset infomation
             var generateAsset = new AssetGen(TableName, 1000000m,
                 new PublicKeyAddress(Utils.GetUser0KeyPair().PublicKey));
 
@@ -71,7 +77,11 @@ namespace TestSample
 
             return tx.Id.ToString(); ;
         }
-
+        /// <summary>
+        /// Send Asset Method
+        /// </summary>
+        /// <param name="client"></param>
+        /// <returns>tx.Id</returns>
         public static async Task<string> Send(IClient client)
         {
             var from = new PublicKeyAddress(Utils.GetUser0KeyPair());
@@ -87,7 +97,10 @@ namespace TestSample
 
             return tx.Id.ToString();
         }
-
+        /// <summary>
+        /// Inputjudgement for enter amount by customer 
+        /// </summary>
+        /// <returns>value</returns>
         public static decimal Inputjudgement()
         {
             const int RETRY_MAX = 5;
@@ -128,7 +141,10 @@ namespace TestSample
                 return 0;
             }
         }
-
+         /// <summary>
+         /// show Asset of  designated publickeyAddress
+         /// </summary>
+         /// <param name="client"></param>
         private static async Task ShowAsset(IClient client)
         {
             // AssetClient has access to asset endpoints
@@ -145,7 +161,10 @@ namespace TestSample
                 Console.WriteLine($"address={address}, amount={result.Value}");
             }
         }
-
+         /// <summary>
+         /// Send Transaction to miyabi blockchain
+         /// </summary>
+         /// <param name="tx"></param>
         public static async Task SendTransaction(Transaction tx)
         {
             var config = new SdkConfig(Utils.ApiUrl);
